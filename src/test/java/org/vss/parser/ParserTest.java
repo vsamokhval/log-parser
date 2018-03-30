@@ -53,7 +53,7 @@ class ParserTest {
     public void shouldGetFilesFromFolder() {
         String folderName = "path/to/files";
 
-        List<File> fileList= FileUtils.getFilesAndFilesSubDirectories(folderName);
+        List<File> fileList = FileUtils.getFilesAndFilesSubDirectories(folderName);
         fileList.forEach(file -> System.out.println(file.getName() +
                                                     " | " + file.getAbsolutePath()));
     }

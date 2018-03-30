@@ -1,6 +1,6 @@
 package org.vss.parser;
 
-import static org.vss.HystrixGroupNames.ET_GROUP;
+import static org.vss.HystrixGroupNames.SERVICE_MESSAGE_GROUP;
 import static org.vss.HystrixGroupNames.GROUP_NAMES_WO_ET_GROUP;
 
 import org.vss.holder.HystrixGroupInfo;
@@ -24,11 +24,11 @@ public class Parser {
     public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
     private static final String DATE_TIME_REGEX = "\\d{4}/\\d{1,2}/\\d{1,2} \\d{1,2}:\\d{1,2}:\\d{1,2}\\.\\d{1,3}";
     private static final Pattern PATTERN = Pattern.compile(DATE_TIME_REGEX);
-    private static final String END_OF_EXTERNAL_REQUEST = "end call to external web service";
+    private static final String END_OF_EXTERNAL_REQUEST = "end call";
 
-    private static final String START_OF_ET_GROUP_REQUEST = "SystemType: ET";
-    private static final String END_OF_ET_GROUP_REQUEST = "RAW RESPONSE:";
-    private static final String ERROR_TEMPLATE = "HystrixRuntimeException";
+    private static final String START_OF_GROUP_REQUEST = "Start request";
+    private static final String END_OF_GROUP_REQUEST = "End request";
+    private static final String ERROR_TEMPLATE = "Exception";
 
     public Map<String, List<HystrixGroupInfo>> parseFiles(List<File> filesList) {
         boolean isReqStartFound = false;
@@ -69,7 +69,7 @@ public class Parser {
     public Map<String, List<HystrixGroupInfo>> parseFileForETGroup(List<File> filesList) {
         boolean isReqStartFound = false;
         Map<String, List<HystrixGroupInfo>> groupInfo = new HashMap<>();
-        groupInfo.put(ET_GROUP.getName(),  new ArrayList<>(10000));
+        groupInfo.put(SERVICE_MESSAGE_GROUP.getName(), new ArrayList<>(10000));
         for(File file : filesList) {
             try (Scanner scanner = new Scanner(file)) {
 
@@ -77,16 +77,16 @@ public class Parser {
                     String line = scanner.nextLine();
                     if (!isReqStartFound) {
                         HystrixGroupInfo requestInfo = tryToGetHystrixGroupInfo(line,
-                                                                            Arrays.asList(START_OF_ET_GROUP_REQUEST));
+                                                                            Arrays.asList(START_OF_GROUP_REQUEST));
                         if (requestInfo != null) {
-                            requestInfo.setGroupName(ET_GROUP.getName());
-                            groupInfo.get(ET_GROUP.getName()).add(requestInfo);
+                            requestInfo.setGroupName(SERVICE_MESSAGE_GROUP.getName());
+                            groupInfo.get(SERVICE_MESSAGE_GROUP.getName()).add(requestInfo);
                             isReqStartFound = true;
                         }
                     } else {
-                        if (line.contains(END_OF_ET_GROUP_REQUEST)) {
+                        if (line.contains(END_OF_GROUP_REQUEST)) {
                             Date reqEndTime = getDateForMatchedLine(PATTERN, line);
-                            List<HystrixGroupInfo> infoList = groupInfo.get(ET_GROUP.getName());
+                            List<HystrixGroupInfo> infoList = groupInfo.get(SERVICE_MESSAGE_GROUP.getName());
                             HystrixGroupInfo requestInfo = infoList.get(infoList.size() - 1);
                             requestInfo.setEndTime(reqEndTime);
                             requestInfo.setWithError(checkForError(line, ERROR_TEMPLATE));
